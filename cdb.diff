@@ -1,0 +1,240 @@
+{
+	"cst": {
+		"ToolsForgingTime": {
+			"value": 100
+		},
+		"WeaponForgingTime": {
+			"value": 100
+		},
+		"RelicForgingTime": {
+			"value": 100
+		}
+	},
+	"unit": {
+		"Skirmisher": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Bowman": {
+			"phases": {
+				"0": {
+					"atk": 10
+				}
+			}
+		},
+		"Giant": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Myrkalfar": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Kobold": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Dwarf": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Gayant": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Death": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"UndeadGiant": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"GiantFire": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"GiantCrow": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Wolf": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"WhiteWolf": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			},
+			"flags": 1075838977
+		},
+		"SacredWolf": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SpectralWolf": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Bear": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"WhiteBear": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SacredBear": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SpectralBear": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"BearMaiden": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SacredRam": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SpectralRam": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"LynxBrown": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			},
+			"flags": 1084227585
+		},
+		"LynxWhite": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			},
+			"flags": 1084227585
+		},
+		"Valkyrie": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"SpecterWarrior": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"IceGolem": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"GiantBoar": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			},
+			"flags": 1076895745
+		},
+		"ColossalBoar": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"RevivedCarcass": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		},
+		"Tarasque": {
+			"props": {
+				"moveSpeed": 3,
+				"runSpeedCoeff": 1.5
+			}
+		}
+	},
+	"building": {
+		"Forge": {
+			"values": {
+				"0": {
+					"val": 100
+				}
+			},
+			"props": {
+				"life": 999999
+			}
+		},
+		"TownHall": {
+			"values": {
+				"0": {
+					"val": 0,
+					"upgradedVals": {
+						"0": {
+							"val": 0
+						}
+					}
+				},
+				"1": {
+					"val": 0,
+					"upgradedVals": {
+						"0": {
+							"val": 0
+						}
+					},
+					"id": 0,
+					"comments": null
+				}
+			}
+		}
+	}
+}
