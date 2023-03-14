@@ -19,25 +19,25 @@ var GAMEDATA = {
 	},
 	WAYS : [
 		{
-			SPAWNTIME : 30, //Когда волна должна заспавнитася (в секундах)
-			SPAWNED : false,
-			LEFT : [
-				{u:Unit.Death, nb:8},
-				{u:Unit.Valkyrie, nb:4}
-			],
-			MIDDLE : [
-				{u:Unit.Death, nb:8},
-				{u:Unit.WhiteWolf, nb:4}
-			],
-			RIGHT : [
-				{u:Unit.Death, nb:8},
-				{u:Unit.WhiteWolf, nb:4}
-			]
-		},
-		{
 			SPAWNTIME : 60, //Когда волна должна заспавнитася (в секундах)
 			SPAWNED : false,
 			LEFT : [
+				{u:Unit.Death, nb:8},
+				{u:Unit.WhiteWolf, nb:4}
+			],
+			MIDDLE : [
+				{u:Unit.Death, nb:8},
+				{u:Unit.WhiteWolf, nb:4}
+			],
+			RIGHT : [
+				{u:Unit.Death, nb:8},
+				{u:Unit.WhiteWolf, nb:4}
+			]
+		},
+		{
+			SPAWNTIME : 160, //Когда волна должна заспавнитася (в секундах)
+			SPAWNED : false,
+			LEFT : [
 				{u:Unit.GiantBoar, nb:1},
 				{u:Unit.Death, nb:5},
 				{u:Unit.Myrkalfar, nb:2},
@@ -57,7 +57,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 90, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 260, //Когда волна должна заспавнитася (в секундах)
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.UndeadGiant, nb:1},
@@ -79,7 +79,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 120, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 360, //Когда волна должна заспавнитася (в секундах)
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.IceGolem, nb:1},
@@ -104,7 +104,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 150, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 460, //Когда волна должна заспавнитася (в секундах)
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.UndeadGiant, nb:1},
