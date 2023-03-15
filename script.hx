@@ -20,7 +20,7 @@ var GAMEDATA = {
 	},
 	WAYS : [
 		{
-			SPAWNTIME : 5, //when way started (in sec)
+			SPAWNTIME : 100, //when way started (in sec)
 			SPAWNED : false, //check, does way already spawned
 			LEFT : [ //array of mobs to the left spawner
 				{u:Unit.Death, nb:8},
@@ -298,37 +298,40 @@ function defeatCheck() {
 function fogUpdater() {
 	if (timer % 2 != 0) return; // update fog 1 times in 2 sec
 
-	var charZonePosition : Zone = ARMY.HEROES.GENDOLF.zone;
-	var nearZones : Array<Zone> = charZonePosition.next.copy();
+	var charZone : Zone = ARMY.HEROES.GENDOLF.zone;
+	var nearZones : Array<Zone> = charZone.next.copy();
 	var nearZonesInt : Array<Int> = [];
 
-	nearZones.push(charZonePosition);
-	player.discoverZone(charZonePosition);
+	nearZones.push(charZone);
 
-	for (zone in nearZones) {
+	//debug("0");
+	@sync for (zone in nearZones) {
 		var zId = zone.id;
 		nearZonesInt.push(zId);
 		if (!GAMEDATA.TILES.BLOCKEDTOSCOUT.contains(zId)
 			&& !GAMEDATA.TILES.OPENEDTILES.contains(zId)
 			&& !GAMEDATA.TILES.ALWAYSOPENEDTILES.contains(zId)) {
-			player.discoverZone(zone);
+			@async {
+				player.discoverZone(zone);
+			}
 			GAMEDATA.TILES.OPENEDTILES.push(zId);
 		}
 	}
 
+	//debug("1");
 	var iter : Int = 0;
-	for (zone in GAMEDATA.TILES.OPENEDTILES) {
+	@sync for (zone in GAMEDATA.TILES.OPENEDTILES) {
 		if (!nearZonesInt.contains(zone)
 			&& !GAMEDATA.TILES.ALWAYSOPENEDTILES.contains(zone)) {
-			player.coverZone(getZone(zone));
-			wait(0);
+			@async {
+				player.coverZone(getZone(zone));
+			}
 			GAMEDATA.TILES.OPENEDTILES.splice(iter,1);
 		} else {
 			iter++;
 		}
 	}
-
-	//if (isDebug) debug("openedZones:"+GAMEDATA.TILES.OPENEDTILES);
+	//debug("2 "+GAMEDATA.TILES.OPENEDTILES);
 }
 
 function deleteDeadUnits() {
@@ -342,9 +345,6 @@ function deleteDeadUnits() {
 		}
 	}
 }
-
-
-
 
 /**
  * Adding units in "unitsSplitedByLands"
@@ -462,15 +462,21 @@ function addResources() {
 
 function regularUpdate(dt : Float) {
 	if (timer % 10 == 0) {
-		if (isDebug) debug("update:" + timer);
+		//if (isDebug) debug("update:" + timer);
 	}
 	@split [
 		wayChecker(),
+		//debug("0"),
 		wayAnnonser(),
+		//debug("1"),
 		deleteDeadUnits(),
+		//debug("2"),
 		mobsMover(),
+		//debug("3"),
 		fogUpdater(),
+		//debug("4"),
 		addResources(),
+		//debug("5"),
 		defeatCheck()
 		//healPeople()
 	];
