@@ -1,42 +1,42 @@
 var isDebug = true;
 var GAMEDATA = {
-	USERDEFEATED : false,
-	WAYCOUNTER : -1, //-1 потому пре первом вызове волны, у нас будет нулевая волна
+	USERDEFEATED : false, //check, does player defeted
+	WAYCOUNTER : -1, // way counter
 	TILES : {
-		MAIN : getZone(60), //Главный тайл, куда будут идти все мобы
-		STARTEDLAND : getZone(51), //Зона, на которой спавнятся наши герои
+		MAIN : getZone(60), // main tile, where all mobs from ways are going
+		STARTEDLAND : getZone(51), // started zone, where player army spawned
 		SPAWNERS : {
-			LEFT : getZone(138), // Левый спавнер
-			MIDDLE : getZone(95), // Центральный спавнер
-			RIGHT : getZone(37) // Правый спавнер
+			LEFT : getZone(138), // left spawner
+			MIDDLE : getZone(95), // middle spawner
+			RIGHT : getZone(37) // right spawner
 		},
 		BLOCKEDTOSCOUT : [17,29,22,28,20,24,21,26,18,32,31,46,58,73,93,110,120,142,153,168,166,175,
 			178,184,203,222,235,230,211,193,175,186,205,220,237,227,210,197,232,228,239,225,233,223,213,
 			198,202,185,182,172,195,176,170,167,149,135,117,96,80,68,225,234,216,215,224,196,219,214,199,
-			204,189,181,127,132,150,164,157,139], //зоны, заблоченные для скаутинга
+			204,189,181,127,132,150,164,157,139], //blocked zones for scouting
 		OPENEDTILES : [],
-		ALWAYSOPENEDTILES : [116,101,104,91,97,87,89,78,81,70,59,52,40,33,84,71,76,64,48,34,42,51,60],
-		SYSTEMZONES : [for(i in [226,216,196,224,234,215]) getZone(i)]
+		ALWAYSOPENEDTILES : [116,101,104,91,97,87,89,78,81,70,59,52,40,33,84,71,76,64,48,34,42,51,60], //array of pre discovered tiles
+		SYSTEMZONES : [for(i in [226,216,196,224,234,215]) getZone(i)] //system zones (like player townhall)
 	},
 	WAYS : [
 		{
-			SPAWNTIME : 5, //Когда волна должна заспавнитася (в секундах)
-			SPAWNED : false,
-			LEFT : [
+			SPAWNTIME : 5, //when way started (in sec)
+			SPAWNED : false, //check, does way already spawned
+			LEFT : [ //array of mobs to the left spawner
 				{u:Unit.Death, nb:8},
 				{u:Unit.WhiteWolf, nb:4}
 			],
-			MIDDLE : [
+			MIDDLE : [ //array of mobs to the middle spawner
 				{u:Unit.Death, nb:8},
 				{u:Unit.WhiteWolf, nb:4}
 			],
-			RIGHT : [
+			RIGHT : [ //array of mobs to the right spawner
 				{u:Unit.Death, nb:8},
 				{u:Unit.WhiteWolf, nb:4}
 			]
 		},
 		{
-			SPAWNTIME : 160, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 160,
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.GiantBoar, nb:1},
@@ -58,7 +58,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 260, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 260,
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.UndeadGiant, nb:1},
@@ -80,7 +80,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 360, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 360,
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.IceGolem, nb:1},
@@ -105,7 +105,7 @@ var GAMEDATA = {
 			]
 		},
 		{
-			SPAWNTIME : 460, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 460,
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.UndeadGiant, nb:1},
@@ -143,16 +143,17 @@ var GAMEDATA = {
 		}
 	]
 };
-var timer = 0.0; //Таймер
+var timer = 0.0; //game timer
 var player : Player = null;
 var ai : Player = null;
-var allSpawnedLiveUnits : Array<Unit> = []; //Тут хранится список всех заспавненых живых мобов
+var allSpawnedLiveUnits : Array<Unit> = []; //Storage of all alive mobs from ways
 var unitsSplitedByLands : Array<{
-		ID:Int,
-		HASPLAYERUNITS:Bool,
-		NEARTILEWITHPLAYERUNITS:Int,
+		ID:Int, // id zone
+		HASPLAYERUNITS:Bool, // check, does player units in the same zone with mobs
+		NEARTILEWITHPLAYERUNITS:Int, // near tile with player units
 		UNITS:Array<Unit>
-	}> = [];
+	}> = []; // array of data with info about mobs from ways
+
 var ARMY = {
 	UNITTODEF : null,
 	HEROES : {
@@ -262,7 +263,7 @@ function wayAnnonser() {
 	//state.events.(Event.WoodRequest);
 }
 
-//Invoke units to zones
+//Invoke units to zone
 function wayInvoke(unitsList,tile) {
 	if (isDebug) debug("wayInvoke unitsCnt:"+unitsList.length+" tile:"+tile.id);
 	var spawnedUnits : Array<Unit> = [];
@@ -295,7 +296,7 @@ function defeatCheck() {
 }
 
 function fogUpdater() {
-	if (timer % 2 != 0) return; //раз в 2 секунды обновляем туман
+	if (timer % 2 != 0) return; // update fog 1 times in 2 sec
 
 	var charZonePosition : Zone = ARMY.HEROES.GENDOLF.zone;
 	var nearZones : Array<Zone> = charZonePosition.next.copy();
@@ -322,7 +323,6 @@ function fogUpdater() {
 			player.coverZone(getZone(zone));
 			wait(0);
 			GAMEDATA.TILES.OPENEDTILES.splice(iter,1);
-			//if (isDebug) debug("zone:"+zone+" hidden");
 		} else {
 			iter++;
 		}
@@ -436,12 +436,10 @@ function mobsMover() { //я ебал, почему нужно двигать ю�
 
 	if (allSpawnedLiveUnits.length == 0) return;
 
-	//debug('0');
 	addUnitToLandArr(allSpawnedLiveUnits);
 	updateLandsWithUnitsInfo();
 	moveMobs();
 	unitsSplitedByLands = [];
-	//debug('1');
 }
 
 function addResources() {
