@@ -1,5 +1,6 @@
 var isDebug = true;
 var GAMEDATA = {
+	USERDEFEATED : false,
 	WAYCOUNTER : -1, //-1 потому пре первом вызове волны, у нас будет нулевая волна
 	TILES : {
 		MAIN : getZone(60), //Главный тайл, куда будут идти все мобы
@@ -19,7 +20,7 @@ var GAMEDATA = {
 	},
 	WAYS : [
 		{
-			SPAWNTIME : 60, //Когда волна должна заспавнитася (в секундах)
+			SPAWNTIME : 5, //Когда волна должна заспавнитася (в секундах)
 			SPAWNED : false,
 			LEFT : [
 				{u:Unit.Death, nb:8},
@@ -146,6 +147,12 @@ var timer = 0.0; //Таймер
 var player : Player = null;
 var ai : Player = null;
 var allSpawnedLiveUnits : Array<Unit> = []; //Тут хранится список всех заспавненых живых мобов
+var unitsSplitedByLands : Array<{
+		ID:Int,
+		HASPLAYERUNITS:Bool,
+		NEARTILEWITHPLAYERUNITS:Int,
+		UNITS:Array<Unit>
+	}> = [];
 var ARMY = {
 	UNITTODEF : null,
 	HEROES : {
@@ -163,9 +170,9 @@ var ARMY = {
 };
 
 function init() {
-	log("Init");
+	if (isDebug) debug("Init");
     if (state.time == 0) {
-		log("Start");
+		if (isDebug) debug("Start");
 		noEvent();
 		catchUser();
 		addRules();
@@ -174,6 +181,7 @@ function init() {
 		discoverOpenedTiles();
 		getZone(64).owner = player;
 		moveCamera({x:206,y:180});
+		talk("Lol");
 		if (isDebug) {
 			//player.discoverAll(); //Открываем всю карту
 		}
@@ -239,12 +247,13 @@ function wayChecker() {
 
 		if (timer >= spawnTime && !spawned) {
 			way.SPAWNED = true;
-			log("Init spawning");
+			if (isDebug) debug("Init spawning");
 			@split [
 				wayInvoke(way.LEFT,GAMEDATA.TILES.SPAWNERS.LEFT),
 				wayInvoke(way.MIDDLE,GAMEDATA.TILES.SPAWNERS.MIDDLE),
 				wayInvoke(way.RIGHT,GAMEDATA.TILES.SPAWNERS.RIGHT)
 			];
+			if (isDebug) debug("Way spawned2");
 		}
 	};
 }
@@ -255,7 +264,7 @@ function wayAnnonser() {
 
 //Invoke units to zones
 function wayInvoke(unitsList,tile) {
-	log("wayInvoke unitsCnt:"+unitsList.length+" tile:"+tile.id);
+	if (isDebug) debug("wayInvoke unitsCnt:"+unitsList.length+" tile:"+tile.id);
 	var spawnedUnits : Array<Unit> = [];
 
 	for (unit in unitsList) {
@@ -270,13 +279,17 @@ function wayInvoke(unitsList,tile) {
 			allSpawnedLiveUnits.push(cUnit);
 		}
 	}
-	log("Way spawned2");
+
 	launchAttack(spawnedUnits,[GAMEDATA.TILES.MAIN.id]);
 	sfx(UiSfx.Horn);
 }
 
-function defUnitIsAlive() {
+function defeatCheck() {
 	if (ARMY.UNITTODEF.life <= 0.01) {
+		GAMEDATA.USERDEFEATED = true;
+	}
+
+	if (GAMEDATA.USERDEFEATED) {
 		player.customDefeat("А вот нужно было дэфать челика на мейне))00");
 	}
 }
@@ -309,13 +322,13 @@ function fogUpdater() {
 			player.coverZone(getZone(zone));
 			wait(0);
 			GAMEDATA.TILES.OPENEDTILES.splice(iter,1);
-			//log("zone:"+zone+" hidden");
+			//if (isDebug) debug("zone:"+zone+" hidden");
 		} else {
 			iter++;
 		}
 	}
 
-	//log("openedZones:"+GAMEDATA.TILES.OPENEDTILES);
+	//if (isDebug) debug("openedZones:"+GAMEDATA.TILES.OPENEDTILES);
 }
 
 function deleteDeadUnits() {
@@ -323,20 +336,112 @@ function deleteDeadUnits() {
 	for (unit in allSpawnedLiveUnits) {
 		if (unit.life <= 0.01) {
 			allSpawnedLiveUnits.splice(iter,1);
-			//log("unit dead:"+iter);
+			//if (isDebug) debug("unit dead:"+iter);
 		} else {
 			iter++;
 		}
 	}
 }
 
-function mobsMover() { //я ебал, почему нужно двигать юнитов, после каждого срабатывания атаки в тайле?
-	if (allSpawnedLiveUnits.length > 0) launchAttack(allSpawnedLiveUnits,[GAMEDATA.TILES.MAIN.id]);
+
+
+
+/**
+ * Adding units in "unitsSplitedByLands"
+ * @param \{Unit\} unit
+ */
+
+function addUnitToLandArr(unitsList : Array<Unit>) {
+	@sync for (unit in unitsList) {
+		var zoneId = unit.zone.id,
+			exist = false;
+
+		@sync for (land in unitsSplitedByLands) {
+			var landId = land.ID;
+			var units = land.UNITS;
+
+			if (landId == zoneId) {
+				units.push(unit);
+				exist = true;
+				break;
+			}
+		}
+		if (!exist) {
+			unitsSplitedByLands.push({
+				ID : zoneId,
+				HASPLAYERUNITS : false,
+				NEARTILEWITHPLAYERUNITS : null,
+				UNITS : [unit]
+			});
+		}
+	}
 }
 
-//Just logger
-function log(msg) {
-	if (isDebug) debug(msg);
+function updateLandsWithUnitsInfo() {
+	@sync for (elem in unitsSplitedByLands) {
+		var hasPlayerUnits : Bool = false;
+		var zoneId = elem.ID;
+		var zUnits : Array<Unit> = getZone(zoneId).units.copy();
+		var nearTileWithPlayerUnits = null;
+		var nearTiles = getZone(zoneId).next;
+
+		@sync for (unit in zUnits) {
+			if (unit.owner == player) {
+				hasPlayerUnits = true;
+				break;
+			}
+		}
+		@sync for (tile in nearTiles) {
+			var tileId = tile.id,
+				unitsInTile = tile.units;
+
+			if (unitsInTile.length == 0) {
+				continue;
+			} else {
+				@sync for (unit in unitsInTile) {
+					if (unit.owner == player) {
+						nearTileWithPlayerUnits = tileId;
+						break;
+					}
+				}
+			}
+		}
+		elem.NEARTILEWITHPLAYERUNITS = nearTileWithPlayerUnits;
+		elem.HASPLAYERUNITS = hasPlayerUnits;
+	}
+}
+
+function moveMobs() {
+	@sync for (elem in unitsSplitedByLands) {
+		var hasPlayerUnits = elem.HASPLAYERUNITS,
+			zoneId = elem.ID,
+			units = elem.UNITS,
+			targetLand = hasPlayerUnits ? zoneId
+				: elem.NEARTILEWITHPLAYERUNITS != null ? elem.NEARTILEWITHPLAYERUNITS
+					: GAMEDATA.TILES.MAIN.id;
+
+		if (!hasPlayerUnits) {
+			launchAttack(units,[targetLand]);
+		} else {
+			for (unit in elem.UNITS) {
+				unit.moveToZone(getZone(zoneId),true);
+			}
+		}
+
+		if (hasPlayerUnits) debug("units in land");
+	}
+}
+
+function mobsMover() { //я ебал, почему нужно двигать юнитов, после каждого срабатывания атаки в тайле?
+
+	if (allSpawnedLiveUnits.length == 0) return;
+
+	//debug('0');
+	addUnitToLandArr(allSpawnedLiveUnits);
+	updateLandsWithUnitsInfo();
+	moveMobs();
+	unitsSplitedByLands = [];
+	//debug('1');
 }
 
 function addResources() {
@@ -359,7 +464,7 @@ function addResources() {
 
 function regularUpdate(dt : Float) {
 	if (timer % 10 == 0) {
-		log("update:" + timer);
+		if (isDebug) debug("update:" + timer);
 	}
 	@split [
 		wayChecker(),
@@ -368,7 +473,7 @@ function regularUpdate(dt : Float) {
 		mobsMover(),
 		fogUpdater(),
 		addResources(),
-		defUnitIsAlive()
+		defeatCheck()
 		//healPeople()
 	];
 	timer += 0.5;
