@@ -1,10 +1,17 @@
 var isDebug = true;
 var GAMEDATA = {
 	USERDEFEATED : false, //check, does player defeted
+	OBJECTIVESINITED : false,
+	BUILDINGBURNDISABLED : false,
+	VILLAGERSUNITSSPAWNED : false,
 	WAYCOUNTER : -1, // way counter
+	USERRESOURCES : {
+		SOMERES : 0
+	},
 	TILES : {
 		MAIN : getZone(60), // main tile, where all mobs from ways are going
 		STARTEDLAND : getZone(51), // started zone, where player army spawned
+		SMITHERZONE : getZone(64),
 		SPAWNERS : {
 			LEFT : getZone(138), // left spawner
 			MIDDLE : getZone(95), // middle spawner
@@ -16,11 +23,12 @@ var GAMEDATA = {
 			204,189,181,127,132,150,164,157,139], //blocked zones for scouting
 		OPENEDTILES : [],
 		ALWAYSOPENEDTILES : [116,101,104,91,97,87,89,78,81,70,59,52,40,33,84,71,76,64,48,34,42,51,60], //array of pre discovered tiles
+		CASTLEZONES : [for(i in [116,101,104,91,97,87,89,78,81,70,59,52,40,33,84,71,76,64,48,34,42,51,60]) getZone(i)],
 		SYSTEMZONES : [for(i in [226,216,196,224,234,215]) getZone(i)] //system zones (like player townhall)
 	},
 	WAYS : [
 		{
-			SPAWNTIME : 100, //when way started (in sec)
+			SPAWNTIME : 5, //when way started (in sec)
 			SPAWNED : false, //check, does way already spawned
 			LEFT : [ //array of mobs to the left spawner
 				{u:Unit.Death, nb:8},
@@ -145,7 +153,9 @@ var GAMEDATA = {
 };
 var timer = 0.0; //game timer
 var player : Player = null;
-var ai : Player = null;
+var aiSaruman : Player = null;
+var aiDefenders : Player = null;
+
 var allSpawnedLiveUnits : Array<Unit> = []; //Storage of all alive mobs from ways
 var unitsSplitedByLands : Array<{
 		ID:Int, // id zone
@@ -171,20 +181,130 @@ var ARMY = {
 };
 
 function init() {
-	if (isDebug) debug("Init");
+	addObjectives();
     if (state.time == 0) {
-		if (isDebug) debug("Start");
+		if (isDebug) debug("Init");
 		noEvent();
 		catchUser();
 		addRules();
 		hideAndCleanSystemZones();
 		initStartedArmy();
 		discoverOpenedTiles();
-		getZone(64).owner = player;
-		moveCamera({x:206,y:180});
-		talk("Lol");
+		moveCamera({x:180,y:180});
+		//talk("Lol");
+
 		if (isDebug) {
 			//player.discoverAll(); //Открываем всю карту
+		}
+		if (isDebug) debug("end init");
+	}
+}
+
+function regularUpdate(dt : Float) {
+	// if (timer % 10 == 0) {
+	// 	if (isDebug) debug("update:" + timer);
+	// }
+	@split [
+		disableBurnForBuildings(),
+		//spawnUnits(),
+		wayChecker(),
+		//debug("0"),
+		wayAnnonser(),
+		//debug("1"),
+		deleteDeadUnits(),
+		//debug("2"),
+		mobsMover(),
+		//debug("3"),
+		fogUpdater(),
+		//debug("4"),
+		addResources(),
+		//debug("5"),
+		defeatCheck()
+		//healPeople()
+	];
+	timer += 0.5;
+	if (timer % 10 == 0) {
+		debug("regUpd alive");
+	}
+}
+
+function spawnUnits() {
+
+	var villagersTypes:Array<UnitKind> = [
+		Unit.Villager,
+		Unit.VillagerWoman,
+		Unit.Norn,
+		Unit.Mender,
+		Unit.Cook,
+		Unit.Skald,
+		Unit.RuneMaster,
+		Unit.Peon,
+		Unit.Woodcutter02,
+		Unit.Farmer02,
+		Unit.Priest,
+		Unit.Merchant02];
+
+	aiDefenders.addBonus({id:ConquestBonus.BOffensiveCivilian});
+	//@sync {
+		//player.getFactionRelation(getFaction("Jottans"));
+		//RelationCommon.al
+		for (zone in GAMEDATA.TILES.CASTLEZONES) {
+			var cntOfSpawnedUnits = 0;
+
+			@sync for (i in 0...3) {
+				var rndCnt:Int = math.round(math.random(4));
+				var rndType:Int = math.round(math.random(villagersTypes.length));
+				cntOfSpawnedUnits += rndCnt;
+				var units = zone.addUnit(villagersTypes[rndType],rndCnt,aiDefenders);
+				@sync for (unit in units) {
+					unit.setUnitFlag(UnitFlag.DisableControl,true);
+					unit.setUnitFlag(UnitFlag.CantDie,true);
+					unit.setUnitFlag(UnitFlag.IsDefending,false);
+					unit.setUnitFlag(UnitFlag.IsInvincible,true);
+					unit.setUnitFlag(UnitFlag.NoRepel,true);
+					unit.owner = getFaction("Jottans").asPlayer();
+					//unit.scriptVisible = false;
+				}
+
+			}
+			debug("id:"+zone.id+" cnt:"+cntOfSpawnedUnits);
+			wait(0.5);
+		}
+	//}
+
+	if (GAMEDATA.VILLAGERSUNITSSPAWNED) {return;}
+	GAMEDATA.VILLAGERSUNITSSPAWNED = true;
+	GAMEDATA.TILES.SMITHERZONE.takeControl(player);
+	GAMEDATA.TILES.SMITHERZONE.addUnit(Unit.Smith,2,player);
+}
+
+function addObjectives() {
+	if (!GAMEDATA.OBJECTIVESINITED) {
+		debug('objectives init');
+		GAMEDATA.OBJECTIVESINITED = true;
+		me().objectives.add('readyButton', "", {visible:true}, {name:'Press me', action:'spawnUnits'});
+		me().objectives.add("resInfo", "Your gold [Money].", {visible:true, showProgressBar:true});
+		debug('objectives inited');
+	}
+}
+
+function readyButtonInvoke() {
+	debug('Click');
+	GAMEDATA.USERRESOURCES.SOMERES++;
+	me().objectives.setGoalVal("resInfo",GAMEDATA.USERRESOURCES.SOMERES);
+	me().objectives.setCurrentVal("resInfo",GAMEDATA.USERRESOURCES.SOMERES);
+}
+
+function disableBurnForBuildings() {
+
+	if (GAMEDATA.BUILDINGBURNDISABLED) {return;}
+	GAMEDATA.BUILDINGBURNDISABLED = true;
+
+	var allZonesInGame = state.zones;
+	@sync for (zone in allZonesInGame) {
+		var buildings = zone.buildings;
+		@sync for (building in buildings) {
+			building.setFlag(BuildingFlag.CantBurn,true);
 		}
 	}
 }
@@ -214,12 +334,14 @@ function addRules() {
 	addRule(Rule.NoWinter);
 	addRule(Rule.NoCalendarUpdate);
 	addRule(Rule.NoBuildUI);
-	addRule(Rule.HidePlayerList);
+	//addRule(Rule.HidePlayerList);
 	addRule(Rule.HealerAccess);
-	addRule(Rule.NoResUI);
+	//addRule(Rule.NoResUI);
 	addRule(Rule.NoFactions);
 	player.setModifierFlag(PlayerModifierFlag.NoConsumption, true);
 	player.setModifierFlag(PlayerModifierFlag.NoVillagerSpawn, true);
+	aiDefenders.setModifierFlag(PlayerModifierFlag.NoConsumption, true);
+	aiDefenders.setModifierFlag(PlayerModifierFlag.NoVillagerSpawn, true);
 }
 
 function hideAndCleanSystemZones() {
@@ -231,8 +353,10 @@ function hideAndCleanSystemZones() {
 
 function catchUser() {
 	for (p in state.players) {
-		if (p.isAI) {
-			ai = p;
+		if (p.isAI && p.clan == Clan.Wolf) {
+			aiSaruman = p;
+		} else if (p.isAI && p.clan == Clan.Goat) {
+			aiDefenders = p;
 		} else {
 			player = p;
 		}
@@ -272,7 +396,7 @@ function wayInvoke(unitsList,tile) {
 		var mobe = unit.u,
 			cnt = unit.nb;
 
-		var createdUnits = tile.addUnit(mobe,cnt,ai);
+		var createdUnits = tile.addUnit(mobe,cnt,aiSaruman);
 
 		for (cUnit in createdUnits) {
 			cUnit.owner = null; //ебучий костыль
@@ -459,26 +583,3 @@ function addResources() {
 // 		}
 // 	}
 // }
-
-function regularUpdate(dt : Float) {
-	if (timer % 10 == 0) {
-		//if (isDebug) debug("update:" + timer);
-	}
-	@split [
-		wayChecker(),
-		//debug("0"),
-		wayAnnonser(),
-		//debug("1"),
-		deleteDeadUnits(),
-		//debug("2"),
-		mobsMover(),
-		//debug("3"),
-		fogUpdater(),
-		//debug("4"),
-		addResources(),
-		//debug("5"),
-		defeatCheck()
-		//healPeople()
-	];
-	timer += 0.5;
-}
